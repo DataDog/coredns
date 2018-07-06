@@ -106,6 +106,7 @@ func (a *AutoPath) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 	// query we've done and return that as-is. This means the client will do the search path walk again...
 	for i, s := range searchpath {
 		newQName := base + "." + s
+		log.Debugf("Attempting search path '%s' with new name '%s'", s, newQName)
 		ar.Question[0].Name = newQName
 		nw := nonwriter.New(w)
 

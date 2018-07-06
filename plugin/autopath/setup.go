@@ -6,10 +6,13 @@ import (
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/metrics"
+	clog "github.com/coredns/coredns/plugin/pkg/log"
 
 	"github.com/mholt/caddy"
 	"github.com/miekg/dns"
 )
+
+var log = clog.NewWithPlugin("autopath")
 
 func init() {
 	caddy.RegisterPlugin("autopath", caddy.Plugin{
@@ -83,5 +86,6 @@ func autoPathParse(c *caddy.Controller) (*AutoPath, string, error) {
 			ap.Zones[i] = plugin.Host(str).Normalize()
 		}
 	}
+	log.Debugf("Autopath configured for the following zones: %v", ap.Zones)
 	return ap, mw, nil
 }

@@ -12,6 +12,8 @@ import (
 func (k *Kubernetes) AutoPath(state request.Request) []string {
 	// Check if the query falls in a zone we are actually authoritative for and thus if we want autopath.
 	zone := plugin.Zones(k.Zones).Matches(state.Name())
+	log.Debugf("Match %s for query %s in zone list %v", zone, k.Zones, state.Name())
+
 	if zone == "" {
 		return nil
 	}
