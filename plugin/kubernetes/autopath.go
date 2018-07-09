@@ -12,7 +12,7 @@ import (
 func (k *Kubernetes) AutoPath(state request.Request) []string {
 	// Check if the query falls in a zone we are actually authoritative for and thus if we want autopath.
 	zone := plugin.Zones(k.Zones).Matches(state.Name())
-	log.Debugf("Match '%s' for query %s in zone list %v", zone, state.Name(), k.Zones)
+	log.Debugf("Autopath match '%s' for query '%s' in zone list '%v'", zone, state.Name(), k.Zones)
 
 	if zone == "" {
 		return nil
@@ -22,23 +22,25 @@ func (k *Kubernetes) AutoPath(state request.Request) []string {
 
 	pod := k.podWithIP(ip)
 
-	search := make([]string, 3)
+	search := make([]string, 0, cap(k.autoPathSearch)+5)
 	if zone == "." {
 		if pod != nil {
-			search[0] = pod.Namespace + ".svc."
+			search = append(search, pod.Namespace+".svc.")
 		}
-		search[1] = "svc."
-		search[2] = "."
+		search = append(search, "svc.")
+		search = append(search, ".")
 	} else {
 		if pod != nil {
-			search[0] = pod.Namespace + ".svc." + zone
+			search = append(search, pod.Namespace+".svc."+zone)
 		}
-		search[1] = "svc." + zone
-		search[2] = zone
+		search = append(search, "svc."+zone)
+		search = append(search, zone)
 	}
 
 	search = append(search, k.autoPathSearch...)
-	search = append(search, "") // sentinal
+	search = append(search, "") // sentinel
+	log.Debugf("Autopath search path is '%v'", search)
+
 	return search
 }
 
