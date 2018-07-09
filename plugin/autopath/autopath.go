@@ -88,10 +88,6 @@ func (a *AutoPath) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 		return plugin.NextOrFailure(a.Name(), a.Next, ctx, w, r)
 	}
 
-	// if !firstInSearchPath(state.Name(), searchpath) {
-	// 	return plugin.NextOrFailure(a.Name(), a.Next, ctx, w, r)
-	// }
-
 	origQName := state.QName()
 
 	var base string
