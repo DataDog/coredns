@@ -69,6 +69,8 @@ func (a *AutoPath) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 	state := request.Request{W: w, Req: r}
 
 	zone := plugin.Zones(a.Zones).Matches(state.Name())
+	log.Debugf("Autopath match '%s' for query '%s' in zone list '%v'", zone, state.Name(), a.Zones)
+
 	if zone == "" {
 		return plugin.NextOrFailure(a.Name(), a.Next, ctx, w, r)
 	}
