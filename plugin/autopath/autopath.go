@@ -33,7 +33,6 @@ package autopath
 
 import (
 	"context"
-	"strings"
 
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/metrics"
@@ -88,18 +87,18 @@ func (a *AutoPath) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 		return plugin.NextOrFailure(a.Name(), a.Next, ctx, w, r)
 	}
 
+	if !firstInSearchPath(state.Name(), searchpath) {
+		return plugin.NextOrFailure(a.Name(), a.Next, ctx, w, r)
+	}
+
 	origQName := state.QName()
 
-	var base string
 	// Establish base name of the query. I.e what was originally asked.
-	if zone != "." {
-		base, err = dnsutil.TrimZone(state.QName(), zone)
-		if err != nil {
-			return dns.RcodeServerFailure, err
-		}
-	} else {
-		base = strings.TrimRight(state.QName(), ".")
+	base, err := dnsutil.TrimZone(state.QName(), zone)
+	if err != nil {
+		return dns.RcodeServerFailure, err
 	}
+
 	firstReply := new(dns.Msg)
 	firstRcode := 0
 	var firstErr error
