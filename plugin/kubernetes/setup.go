@@ -229,6 +229,18 @@ func ParseStanza(c *caddy.Controller) (*Kubernetes, error) {
 				continue
 			}
 			return nil, c.ArgErr()
+		case "namespace_labels":
+			args := c.RemainingArgs()
+			if len(args) > 0 {
+				namespaceLabelSelectorString := strings.Join(args, " ")
+				nls, err := meta.ParseToLabelSelector(namespaceLabelSelectorString)
+				if err != nil {
+					return nil, fmt.Errorf("unable to parse namespace_label selector value: '%v': %v", namespaceLabelSelectorString, err)
+				}
+				k8s.opts.namespaceLabelSelector = nls
+				continue
+			}
+			return nil, c.ArgErr()
 		case "fallthrough":
 			k8s.Fall.SetZonesFromArgs(c.RemainingArgs())
 		case "upstream":

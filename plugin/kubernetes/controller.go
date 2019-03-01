@@ -61,6 +61,7 @@ type dnsControl struct {
 	client kubernetes.Interface
 
 	selector labels.Selector
+	namespaceSelector labels.Selector
 
 	svcController cache.Controller
 	podController cache.Controller
@@ -91,9 +92,12 @@ type dnsControlOpts struct {
 	initEndpointsCache bool
 	resyncPeriod       time.Duration
 	ignoreEmptyService bool
+
 	// Label handling.
 	labelSelector *meta.LabelSelector
 	selector      labels.Selector
+	namespaceLabelSelector *meta.LabelSelector
+	namespaceSelector labels.Selector
 
 	zones            []string
 	endpointNameMode bool
@@ -104,6 +108,7 @@ func newdnsController(kubeClient kubernetes.Interface, opts dnsControlOpts) *dns
 	dns := dnsControl{
 		client:           kubeClient,
 		selector:         opts.selector,
+		namespaceSelector: opts.namespaceSelector,
 		stopCh:           make(chan struct{}),
 		watched:          make(map[string]struct{}),
 		zones:            opts.zones,
@@ -151,10 +156,12 @@ func newdnsController(kubeClient kubernetes.Interface, opts dnsControlOpts) *dns
 
 	dns.nsLister, dns.nsController = cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc:  namespaceListFunc(dns.client, dns.selector),
-			WatchFunc: namespaceWatchFunc(dns.client, dns.selector),
+			ListFunc:  namespaceListFunc(dns.client, dns.namespaceSelector),
+			WatchFunc: namespaceWatchFunc(dns.client, dns.namespaceSelector),
 		},
-		&api.Namespace{}, opts.resyncPeriod, cache.ResourceEventHandlerFuncs{})
+		&api.Namespace{},
+		opts.resyncPeriod,
+		cache.ResourceEventHandlerFuncs{})
 
 	return &dns
 }
