@@ -30,7 +30,7 @@ func (k *Kubernetes) External(state request.Request) ([]msg.Service, int) {
 	port := "*"
 	protocol := "*"
 	namespace := segs[last]
-	if !k.namespaceExposed(namespace) || !k.namespace(namespace) {
+	if !k.namespaceValid(namespace) {
 		return nil, dns.RcodeNameError
 	}
 
