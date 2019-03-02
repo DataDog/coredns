@@ -397,8 +397,8 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 	// PodModeVerified
 	err = errNoItems
 	if wildcard(podname) && !wildcard(namespace) {
-		// If namespace exist, err should be nil, so that we return nodata instead of NXDOMAIN
-		if k.filteredNamespaceExists(namespace) {
+		// If namespace exists, err should be nil, so that we return NODATA instead of NXDOMAIN
+		if k.filteredNamespaceExists(namespace) || k.namespaceExposed(namespace) {
 			err = nil
 		}
 	}
@@ -431,14 +431,6 @@ func (k *Kubernetes) findServices(r recordRequest, zone string) (services []msg.
 		return nil, errNoItems
 	}
 
-	err = errNoItems
-	if wildcard(r.service) && !wildcard(r.namespace) {
-		// If namespace exist, err should be nil, so that we return nodata instead of NXDOMAIN
-		if k.filteredNamespaceExists(r.namespace) {
-			err = nil
-		}
-	}
-
 	// handle empty service name
 	if r.service == "" {
 		if k.namespaceExposed(r.namespace) || k.filteredNamespaceExists(r.namespace) || wildcard(r.namespace) {
@@ -447,6 +439,14 @@ func (k *Kubernetes) findServices(r recordRequest, zone string) (services []msg.
 		}
 		// NXDOMAIN
 		return nil, errNoItems
+	}
+
+	err = errNoItems
+	if wildcard(r.service) && !wildcard(r.namespace) {
+		// If namespace exists, err should be nil, so that we return NODATA instead of NXDOMAIN
+		if k.filteredNamespaceExists(r.namespace) || k.namespaceExposed(r.namespace) {
+			err = nil
+		}
 	}
 
 	var (

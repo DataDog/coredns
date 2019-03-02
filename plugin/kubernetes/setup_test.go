@@ -188,6 +188,22 @@ func TestKubernetesParse(t *testing.T) {
 			nil,
 		},
 		{
+			`kubernetes coredns.local {
+    namespaces foo bar
+    namespace_labels istio-injection=enabled
+}`,
+			true,
+			"Error during parsing: namespaces and namespace_labels cannot both be set",
+			-1,
+			0,
+			defaultResyncPeriod,
+			"",
+			"istio-injection=enabled",
+			podModeDisabled,
+			fall.Zero,
+			nil,
+		},
+		{
 			`kubernetes coredns.local test.local {
     resyncperiod 15m
 	endpoint http://localhost:8080

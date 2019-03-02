@@ -304,6 +304,10 @@ func ParseStanza(c *caddy.Controller) (*Kubernetes, error) {
 		}
 	}
 
+	if len(k8s.Namespaces) != 0 && k8s.opts.namespaceLabelSelector != nil {
+		return nil, c.Errf("namespaces and namespace_labels cannot both be set")
+	}
+
 	return k8s, nil
 }
 
