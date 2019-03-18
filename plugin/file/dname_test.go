@@ -1,5 +1,8 @@
 package file
 
+/*
+TODO(miek): move to test/ for full server testing
+
 import (
 	"context"
 	"strings"
@@ -104,7 +107,7 @@ func TestLookupDNAME(t *testing.T) {
 		rec := dnstest.NewRecorder(&test.ResponseWriter{})
 		_, err := fm.ServeDNS(ctx, rec, m)
 		if err != nil {
-			t.Errorf("Expected no error, got %v\n", err)
+			t.Errorf("Expected no error, got %v", err)
 			return
 		}
 
@@ -122,23 +125,19 @@ var dnameDnssecTestCases = []test.Case{
 		},
 	},
 	{
-		Qname: "dname.example.org.", Qtype: dns.TypeDNAME,
-		Do: true,
+		Qname: "dname.example.org.", Qtype: dns.TypeDNAME, Do: true,
 		Answer: []dns.RR{
 			test.DNAME("dname.example.org.	1800	IN	DNAME	test.example.org."),
 			test.RRSIG("dname.example.org.	1800	IN	RRSIG	DNAME 5 3 1800 20170702091734 20170602091734 54282 example.org. HvXtiBM="),
 		},
-		Extra: []dns.RR{test.OPT(4096, true)},
 	},
 	{
-		Qname: "a.dname.example.org.", Qtype: dns.TypeA,
-		Do: true,
+		Qname: "a.dname.example.org.", Qtype: dns.TypeA, Do: true,
 		Answer: []dns.RR{
 			test.CNAME("a.dname.example.org.	1800	IN	CNAME	a.test.example.org."),
 			test.DNAME("dname.example.org.	1800	IN	DNAME	test.example.org."),
 			test.RRSIG("dname.example.org.	1800	IN	RRSIG	DNAME 5 3 1800 20170702091734 20170602091734 54282 example.org. HvXtiBM="),
 		},
-		Extra: []dns.RR{test.OPT(4096, true)},
 	},
 }
 
@@ -157,7 +156,7 @@ func TestLookupDNAMEDNSSEC(t *testing.T) {
 		rec := dnstest.NewRecorder(&test.ResponseWriter{})
 		_, err := fm.ServeDNS(ctx, rec, m)
 		if err != nil {
-			t.Errorf("Expected no error, got %v\n", err)
+			t.Errorf("Expected no error, got %v", err)
 			return
 		}
 
@@ -298,3 +297,4 @@ ns.example.org.		1800	IN A	127.0.0.1
 					RXpMdvaE6ZDwalWldLjC3h8QDywDoFdndoRY
 					eHOsmTvvtWWqtO6Fa5A8gmHT5HA= )
 `
+*/

@@ -17,11 +17,14 @@ Enabling *federation* without also having *kubernetes* is a noop.
 ~~~
 federation [ZONES...] {
     NAME DOMAIN
+    upstream
 }
 ~~~
 
 * Each **NAME** and **DOMAIN** defines federation membership. One entry for each. A duplicate
   **NAME** will silently overwrite any previous value.
+* `upstream` [**ADDRESS**...] resolve the `CNAME` target produced by this plugin.  CoreDNS
+  will resolve External Services against itself.
 
 ## Examples
 
@@ -33,6 +36,7 @@ Here we handle all service requests in the `prod` and `stage` federations.
     federation cluster.local {
         prod prod.feddomain.com
         staging staging.feddomain.com
+        upstream
     }
 }
 ~~~
@@ -45,6 +49,7 @@ cluster.local {
     federation {
         prod prod.feddomain.com
         staging staging.feddomain.com
+        upstream
     }
 }
 ~~~

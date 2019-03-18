@@ -30,11 +30,11 @@ func (z *Zone) Lookup(state request.Request, qname string) ([]dns.RR, []dns.RR, 
 	qtype := state.QType()
 	do := state.Do()
 
-	if !z.NoReload {
+	if 0 < z.ReloadInterval {
 		z.reloadMu.RLock()
 	}
 	defer func() {
-		if !z.NoReload {
+		if 0 < z.ReloadInterval {
 			z.reloadMu.RUnlock()
 		}
 	}()
@@ -374,7 +374,6 @@ func cnameForType(targets []dns.RR, origQtype uint16) []dns.RR {
 func (z *Zone) externalLookup(state request.Request, target string, qtype uint16) []dns.RR {
 	m, e := z.Upstream.Lookup(state, target, qtype)
 	if e != nil {
-		// TODO(miek): Log, or return error here?
 		return nil
 	}
 	if m == nil {

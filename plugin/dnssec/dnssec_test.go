@@ -70,7 +70,7 @@ func TestSigningDifferentZone(t *testing.T) {
 	m := testMsgEx()
 	state := request.Request{Req: m, Zone: "example.org."}
 	c := cache.New(defaultCap)
-	d := New([]string{"example.org."}, []*DNSKEY{key}, nil, c)
+	d := New([]string{"example.org."}, []*DNSKEY{key}, false, nil, c)
 	m = d.Sign(state, time.Now().UTC(), server)
 	if !section(m.Answer, 1) {
 		t.Errorf("Answer section should have 1 RRSIG")
@@ -92,37 +92,6 @@ func TestSigningCname(t *testing.T) {
 	m = d.Sign(state, time.Now().UTC(), server)
 	if !section(m.Answer, 1) {
 		t.Errorf("Answer section should have 1 RRSIG")
-	}
-}
-
-// Disabled for now, see #1211.
-func testZoneSigningDelegation(t *testing.T) {
-	d, rm1, rm2 := newDnssec(t, []string{"miek.nl."})
-	defer rm1()
-	defer rm2()
-
-	m := testDelegationMsg()
-	state := request.Request{Req: m, Zone: "miek.nl."}
-	m = d.Sign(state, time.Now().UTC(), server)
-	if !section(m.Ns, 1) {
-		t.Errorf("Authority section should have 1 RRSIG")
-		t.Logf("%v\n", m)
-	}
-
-	ds := 0
-	for i := range m.Ns {
-		if _, ok := m.Ns[i].(*dns.DS); ok {
-			ds++
-		}
-	}
-	if ds != 1 {
-		t.Errorf("Authority section should have 1 DS")
-		t.Logf("%v\n", m)
-
-	}
-	if !section(m.Extra, 0) {
-		t.Errorf("Answer section should have 0 RRSIGs")
-		t.Logf("%v\n", m)
 	}
 }
 
@@ -218,7 +187,7 @@ func testEmptyMsg() *dns.Msg {
 func newDnssec(t *testing.T, zones []string) (Dnssec, func(), func()) {
 	k, rm1, rm2 := newKey(t)
 	c := cache.New(defaultCap)
-	d := New(zones, []*DNSKEY{k}, nil, c)
+	d := New(zones, []*DNSKEY{k}, false, nil, c)
 	return d, rm1, rm2
 }
 

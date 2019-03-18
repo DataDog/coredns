@@ -1,22 +1,17 @@
 package test
 
 import (
-	"io/ioutil"
-	"log"
 	"testing"
 
-	"github.com/coredns/coredns/plugin/proxy"
 	"github.com/coredns/coredns/plugin/test"
-	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
 )
 
 func TestZoneExternalCNAMELookupWithoutProxy(t *testing.T) {
 	t.Parallel()
-	log.SetOutput(ioutil.Discard)
 
-	name, rm, err := TempFile(".", exampleOrg)
+	name, rm, err := test.TempFile(".", exampleOrg)
 	if err != nil {
 		t.Fatalf("Failed to create zone: %s", err)
 	}
@@ -33,10 +28,9 @@ func TestZoneExternalCNAMELookupWithoutProxy(t *testing.T) {
 	}
 	defer i.Stop()
 
-	p := proxy.NewLookup([]string{udp})
-	state := request.Request{W: &test.ResponseWriter{}, Req: new(dns.Msg)}
-
-	resp, err := p.Lookup(state, "cname.example.org.", dns.TypeA)
+	m := new(dns.Msg)
+	m.SetQuestion("cname.example.org.", dns.TypeA)
+	resp, err := dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatalf("Expected to receive reply, but didn't: %s", err)
 	}
@@ -48,19 +42,19 @@ func TestZoneExternalCNAMELookupWithoutProxy(t *testing.T) {
 
 func TestZoneExternalCNAMELookupWithProxy(t *testing.T) {
 	t.Parallel()
-	log.SetOutput(ioutil.Discard)
 
-	name, rm, err := TempFile(".", exampleOrg)
+	name, rm, err := test.TempFile(".", exampleOrg)
 	if err != nil {
 		t.Fatalf("Failed to create zone: %s", err)
 	}
 	defer rm()
 
-	// Corefile with for example without proxy section.
-	corefile := `example.org:0 {
-       file ` + name + ` {
-	       upstream 8.8.8.8
+	// Corefile with for example proxy section.
+	corefile := `.:0 {
+       file ` + name + ` example.org {
+	       upstream
 	}
+	proxy . 8.8.8.8 8.8.4.4
 }
 `
 	i, udp, _, err := CoreDNSServerAndPorts(corefile)
@@ -69,10 +63,9 @@ func TestZoneExternalCNAMELookupWithProxy(t *testing.T) {
 	}
 	defer i.Stop()
 
-	p := proxy.NewLookup([]string{udp})
-	state := request.Request{W: &test.ResponseWriter{}, Req: new(dns.Msg)}
-
-	resp, err := p.Lookup(state, "cname.example.org.", dns.TypeA)
+	m := new(dns.Msg)
+	m.SetQuestion("cname.example.org.", dns.TypeA)
+	resp, err := dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatalf("Expected to receive reply, but didn't: %s", err)
 	}

@@ -1,13 +1,7 @@
 package test
 
 import (
-	"io/ioutil"
-	"log"
 	"testing"
-
-	"github.com/coredns/coredns/plugin/proxy"
-	"github.com/coredns/coredns/plugin/test"
-	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
 )
@@ -17,7 +11,7 @@ func TestHostsInlineLookup(t *testing.T) {
                        hosts highly_unlikely_to_exist_hosts_file example.org {
                          10.0.0.1 example.org
                          fallthrough
-                      }	
+                      }
                     }`
 
 	i, udp, _, err := CoreDNSServerAndPorts(corefile)
@@ -26,12 +20,9 @@ func TestHostsInlineLookup(t *testing.T) {
 	}
 	defer i.Stop()
 
-	log.SetOutput(ioutil.Discard)
-
-	p := proxy.NewLookup([]string{udp})
-	state := request.Request{W: &test.ResponseWriter{}, Req: new(dns.Msg)}
-
-	resp, err := p.Lookup(state, "example.org.", dns.TypeA)
+	m := new(dns.Msg)
+	m.SetQuestion("example.org.", dns.TypeA)
+	resp, err := dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatal("Expected to receive reply, but didn't")
 	}

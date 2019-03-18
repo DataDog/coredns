@@ -30,8 +30,8 @@ func (m *testHandler) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 
 func TestMetadataServeDNS(t *testing.T) {
 	expectedMetadata := []testProvider{
-		testProvider{"test/key1": func() string { return "testvalue1" }},
-		testProvider{"test/key2": func() string { return "two" }, "test/key3": func() string { return "testvalue3" }},
+		{"test/key1": func() string { return "testvalue1" }},
+		{"test/key2": func() string { return "two" }, "test/key3": func() string { return "testvalue3" }},
 	}
 	// Create fake Providers based on expectedMetadata
 	providers := []Provider{}
@@ -52,10 +52,39 @@ func TestMetadataServeDNS(t *testing.T) {
 
 	for _, expected := range expectedMetadata {
 		for label, expVal := range expected {
+			if !IsLabel(label) {
+				t.Errorf("Expected label %s is not considered a valid label", label)
+			}
 			val := ValueFunc(nctx, label)
 			if val() != expVal() {
 				t.Errorf("Expected value %s for %s, but got %s", expVal(), label, val())
 			}
+		}
+	}
+}
+
+func TestLabelFormat(t *testing.T) {
+	labels := []struct {
+		label   string
+		isValid bool
+	}{
+		// ok
+		{"plugin/LABEL", true},
+		{"p/LABEL", true},
+		{"plugin/L", true},
+		// fails
+		{"LABEL", false},
+		{"plugin.LABEL", false},
+		{"/NO-PLUGIN-NOT-ACCEPTED", false},
+		{"ONLY-PLUGIN-NOT-ACCEPTED/", false},
+		{"PLUGIN/LABEL/SUB-LABEL", false},
+		{"/", false},
+		{"//", false},
+	}
+
+	for _, test := range labels {
+		if x := IsLabel(test.label); x != test.isValid {
+			t.Errorf("Label %v expected %v, got: %v", test.label, test.isValid, x)
 		}
 	}
 }

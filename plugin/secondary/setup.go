@@ -49,13 +49,12 @@ func setup(c *caddy.Controller) error {
 func secondaryParse(c *caddy.Controller) (file.Zones, error) {
 	z := make(map[string]*file.Zone)
 	names := []string{}
-	origins := []string{}
-	upstr := upstream.Upstream{}
+	upstr := upstream.New()
 	for c.Next() {
 
 		if c.Val() == "secondary" {
 			// secondary [origin]
-			origins = make([]string, len(c.ServerBlockKeys))
+			origins := make([]string, len(c.ServerBlockKeys))
 			copy(origins, c.ServerBlockKeys)
 			args := c.RemainingArgs()
 			if len(args) > 0 {
@@ -79,12 +78,7 @@ func secondaryParse(c *caddy.Controller) (file.Zones, error) {
 						return file.Zones{}, e
 					}
 				case "upstream":
-					args := c.RemainingArgs()
-					var err error
-					upstr, err = upstream.New(args)
-					if err != nil {
-						return file.Zones{}, err
-					}
+					c.RemainingArgs() // eat args
 				default:
 					return file.Zones{}, c.Errf("unknown property '%s'", c.Val())
 				}

@@ -2,7 +2,7 @@ package auto
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
@@ -77,9 +77,15 @@ func setup(c *caddy.Controller) error {
 }
 
 func autoParse(c *caddy.Controller) (Auto, error) {
+	nilInterval := -1 * time.Second
 	var a = Auto{
-		loader: loader{template: "${1}", re: regexp.MustCompile(`db\.(.*)`), duration: 60 * time.Second},
-		Zones:  &Zones{},
+		loader: loader{
+			template:       "${1}",
+			re:             regexp.MustCompile(`db\.(.*)`),
+			ReloadInterval: nilInterval,
+			duration:       nilInterval,
+		},
+		Zones: &Zones{},
 	}
 
 	config := dnsserver.GetConfig(c)
@@ -104,8 +110,8 @@ func autoParse(c *caddy.Controller) (Auto, error) {
 					return a, c.ArgErr()
 				}
 				a.loader.directory = c.Val()
-				if !path.IsAbs(a.loader.directory) && config.Root != "" {
-					a.loader.directory = path.Join(config.Root, a.loader.directory)
+				if !filepath.IsAbs(a.loader.directory) && config.Root != "" {
+					a.loader.directory = filepath.Join(config.Root, a.loader.directory)
 				}
 				_, err := os.Stat(a.loader.directory)
 				if err != nil {
@@ -141,22 +147,23 @@ func autoParse(c *caddy.Controller) (Auto, error) {
 					if i < 1 {
 						i = 1
 					}
+					log.Warning("TIMEOUT of directory is deprecated. Use RELOAD instead. See https://coredns.io/plugins/auto/#syntax")
 					a.loader.duration = time.Duration(i) * time.Second
 				}
 
+			case "reload":
+				d, err := time.ParseDuration(c.RemainingArgs()[0])
+				if err != nil {
+					return a, plugin.Error("file", err)
+				}
+				a.loader.ReloadInterval = d
+
 			case "no_reload":
-				a.loader.noReload = true
+				a.loader.ReloadInterval = 0
 
 			case "upstream":
-				args := c.RemainingArgs()
-				if len(args) == 0 {
-					return a, c.ArgErr()
-				}
-				var err error
-				a.loader.upstream, err = upstream.New(args)
-				if err != nil {
-					return a, err
-				}
+				c.RemainingArgs() // eat remaining args
+				a.loader.upstream = upstream.New()
 
 			default:
 				t, _, e := parse.Transfer(c, false)
@@ -169,5 +176,15 @@ func autoParse(c *caddy.Controller) (Auto, error) {
 			}
 		}
 	}
+
+	if a.loader.ReloadInterval == nilInterval {
+		if a.loader.duration == nilInterval {
+			a.loader.duration = 60 * time.Second
+		}
+		a.loader.ReloadInterval = a.loader.duration
+	} else if a.loader.duration == nilInterval {
+		a.loader.duration = a.loader.ReloadInterval
+	}
+
 	return a, nil
 }

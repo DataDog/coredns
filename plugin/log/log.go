@@ -3,12 +3,12 @@ package log
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/metrics/vars"
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
+	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/plugin/pkg/rcode"
 	"github.com/coredns/coredns/plugin/pkg/replacer"
 	"github.com/coredns/coredns/plugin/pkg/response"
@@ -22,6 +22,8 @@ type Logger struct {
 	Next      plugin.Handler
 	Rules     []Rule
 	ErrorFunc func(context.Context, dns.ResponseWriter, *dns.Msg, int) // failover error handler
+
+	repl replacer.Replacer
 }
 
 // ServeDNS implements the plugin.Handler interface.
@@ -43,7 +45,6 @@ func (l Logger) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 			} else {
 				answer := new(dns.Msg)
 				answer.SetRcode(r, rc)
-				state.SizeAndDo(answer)
 
 				vars.Report(ctx, state, vars.Dropped, rcode.ToString(rc), answer.Len(), time.Now())
 
@@ -56,9 +57,11 @@ func (l Logger) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 		class := response.Classify(tpe)
 		// If we don't set up a class in config, the default "all" will be added
 		// and we shouldn't have an empty rule.Class.
-		if rule.Class[response.All] || rule.Class[class] {
-			rep := replacer.New(r, rrw, CommonLogEmptyValue)
-			rule.Log.Println(rep.Replace(rule.Format))
+		_, ok := rule.Class[response.All]
+		_, ok1 := rule.Class[class]
+		if ok || ok1 {
+			logstr := l.repl.Replace(ctx, state, rrw, rule.Format)
+			clog.Infof(logstr)
 		}
 
 		return rc, err
@@ -73,16 +76,13 @@ func (l Logger) Name() string { return "log" }
 // Rule configures the logging plugin.
 type Rule struct {
 	NameScope string
-	Class     map[response.Class]bool
+	Class     map[response.Class]struct{}
 	Format    string
-	Log       *log.Logger
 }
 
 const (
 	// CommonLogFormat is the common log format.
-	CommonLogFormat = `{remote}:{port} ` + CommonLogEmptyValue + ` [{when}] {>id} "{type} {class} {name} {proto} {size} {>do} {>bufsize}" {rcode} {>rflags} {rsize} {duration}`
-	// CommonLogEmptyValue is the common empty log value.
-	CommonLogEmptyValue = "-"
+	CommonLogFormat = `{remote}:{port} ` + replacer.EmptyValue + ` {>id} "{type} {class} {name} {proto} {size} {>do} {>bufsize}" {rcode} {>rflags} {rsize} {duration}`
 	// CombinedLogFormat is the combined log format.
 	CombinedLogFormat = CommonLogFormat + ` "{>opcode}"`
 	// DefaultLogFormat is the default log format.

@@ -1,6 +1,7 @@
 package rewrite
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -28,8 +29,8 @@ func newClassRule(nextAction string, args ...string) (Rule, error) {
 	return &classRule{from, to, nextAction}, nil
 }
 
-// Rewrite rewrites the the current request.
-func (rule *classRule) Rewrite(state request.Request) Result {
+// Rewrite rewrites the current request.
+func (rule *classRule) Rewrite(ctx context.Context, state request.Request) Result {
 	if rule.fromClass > 0 && rule.toClass > 0 {
 		if state.Req.Question[0].Qclass == rule.fromClass {
 			state.Req.Question[0].Qclass = rule.toClass

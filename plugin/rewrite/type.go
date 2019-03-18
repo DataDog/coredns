@@ -2,6 +2,7 @@
 package rewrite
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -29,8 +30,8 @@ func newTypeRule(nextAction string, args ...string) (Rule, error) {
 	return &typeRule{from, to, nextAction}, nil
 }
 
-// Rewrite rewrites the the current request.
-func (rule *typeRule) Rewrite(state request.Request) Result {
+// Rewrite rewrites the current request.
+func (rule *typeRule) Rewrite(ctx context.Context, state request.Request) Result {
 	if rule.fromType > 0 && rule.toType > 0 {
 		if state.QType() == rule.fromType {
 			state.Req.Question[0].Qtype = rule.toType

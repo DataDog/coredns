@@ -1,20 +1,48 @@
 package kubernetes
 
 import (
-	"github.com/coredns/coredns/plugin/pkg/watch"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
 )
 
-// SetWatchChan implements watch.Watchable
-func (k *Kubernetes) SetWatchChan(c watch.Chan) {
-	k.APIConn.SetWatchChan(c)
+func serviceWatchFunc(c kubernetes.Interface, ns string, s labels.Selector) func(options meta.ListOptions) (watch.Interface, error) {
+	return func(options meta.ListOptions) (watch.Interface, error) {
+		if s != nil {
+			options.LabelSelector = s.String()
+		}
+		w, err := c.CoreV1().Services(ns).Watch(options)
+		return w, err
+	}
 }
 
-// Watch is called when a watch is started for a name.
-func (k *Kubernetes) Watch(qname string) error {
-	return k.APIConn.Watch(qname)
+func podWatchFunc(c kubernetes.Interface, ns string, s labels.Selector) func(options meta.ListOptions) (watch.Interface, error) {
+	return func(options meta.ListOptions) (watch.Interface, error) {
+		if s != nil {
+			options.LabelSelector = s.String()
+		}
+		w, err := c.CoreV1().Pods(ns).Watch(options)
+		return w, err
+	}
 }
 
-// StopWatching is called when no more watches remain for a name
-func (k *Kubernetes) StopWatching(qname string) {
-	k.APIConn.StopWatching(qname)
+func endpointsWatchFunc(c kubernetes.Interface, ns string, s labels.Selector) func(options meta.ListOptions) (watch.Interface, error) {
+	return func(options meta.ListOptions) (watch.Interface, error) {
+		if s != nil {
+			options.LabelSelector = s.String()
+		}
+		w, err := c.CoreV1().Endpoints(ns).Watch(options)
+		return w, err
+	}
+}
+
+func namespaceWatchFunc(c kubernetes.Interface, s labels.Selector) func(options meta.ListOptions) (watch.Interface, error) {
+	return func(options meta.ListOptions) (watch.Interface, error) {
+		if s != nil {
+			options.LabelSelector = s.String()
+		}
+		w, err := c.CoreV1().Namespaces().Watch(options)
+		return w, err
+	}
 }

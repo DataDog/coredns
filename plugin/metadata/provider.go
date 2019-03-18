@@ -6,7 +6,7 @@
 //
 // Basic example:
 //
-// Implement the Provder interface for a plugin:
+// Implement the Provider interface for a plugin:
 //
 //    func (p P) Metadata(ctx context.Context, state request.Request) context.Context {
 //       cached := ""
@@ -32,6 +32,7 @@ package metadata
 
 import (
 	"context"
+	"strings"
 
 	"github.com/coredns/coredns/request"
 )
@@ -47,6 +48,21 @@ type Provider interface {
 
 // Func is the type of function in the metadata, when called they return the value of the label.
 type Func func() string
+
+// IsLabel checks that the provided name is a valid label name, i.e. two words separated by a slash.
+func IsLabel(label string) bool {
+	p := strings.Index(label, "/")
+	if p <= 0 || p >= len(label)-1 {
+		// cannot accept namespace empty nor label empty
+		return false
+	}
+	if strings.LastIndex(label, "/") != p {
+		// several slash in the Label
+		return false
+	}
+	return true
+
+}
 
 // Labels returns all metadata keys stored in the context. These label names should be named
 // as: plugin/NAME, where NAME is something descriptive.

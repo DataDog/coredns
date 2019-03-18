@@ -60,6 +60,7 @@ proxy FROM TO... {
 ## Policies
 
 There are four load-balancing policies available:
+
 * `random` (default) - Randomly select a backend
 * `least_conn` - Select the backend with the fewest active connections
 * `round_robin` - Select the backend in round-robin fashion
@@ -68,7 +69,7 @@ There are four load-balancing policies available:
 
 
 All polices implement randomly spraying packets to backend hosts when *no healthy* hosts are
-available. This is to preeempt the case where the healthchecking (as a mechanism) fails.
+available. This is to preempt the case where the healthchecking (as a mechanism) fails.
 
 ## Upstream Protocols
 
@@ -99,7 +100,7 @@ If monitoring is enabled (via the *prometheus* directive) then the following met
 Where `proxy_proto` is the protocol used (`dns` or `grpc`) and `to` is **TO**
 specified in the config, `proto` is the protocol used by the incoming query ("tcp" or "udp"), family
 the transport family ("1" for IPv4, and "2" for IPv6). `Server` is the server responsible for the
-request (and metric). See the documention in the metrics plugin.
+request (and metric). See the documentation in the metrics plugin.
 
 ## Examples
 

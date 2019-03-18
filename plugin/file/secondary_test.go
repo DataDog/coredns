@@ -12,7 +12,7 @@ import (
 
 // TODO(miek): should test notifies as well, ie start test server (a real coredns one)...
 // setup other test server that sends notify, see if CoreDNS comes calling for a zone
-// tranfer
+// transfer
 
 func TestLess(t *testing.T) {
 	const (
@@ -146,7 +146,7 @@ func TestIsNotify(t *testing.T) {
 	// need to set opcode
 	state.Req.Opcode = dns.OpcodeNotify
 
-	z.TransferFrom = []string{"10.240.0.1:53"} // IP from from testing/responseWriter
+	z.TransferFrom = []string{"10.240.0.1:53"} // IP from testing/responseWriter
 	if !z.isNotify(state) {
 		t.Fatal("Should have been valid notify")
 	}

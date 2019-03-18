@@ -2,15 +2,10 @@ package test
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/coredns/coredns/plugin/proxy"
-	"github.com/coredns/coredns/plugin/test"
-	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
 )
@@ -35,12 +30,9 @@ func TestAuto(t *testing.T) {
 	}
 	defer i.Stop()
 
-	log.SetOutput(ioutil.Discard)
-
-	p := proxy.NewLookup([]string{udp})
-	state := request.Request{W: &test.ResponseWriter{}, Req: new(dns.Msg)}
-
-	resp, err := p.Lookup(state, "www.example.org.", dns.TypeA)
+	m := new(dns.Msg)
+	m.SetQuestion("www.example.org.", dns.TypeA)
+	resp, err := dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatal("Expected to receive reply, but didn't")
 	}
@@ -49,13 +41,13 @@ func TestAuto(t *testing.T) {
 	}
 
 	// Write db.example.org to get example.org.
-	if err = ioutil.WriteFile(path.Join(tmpdir, "db.example.org"), []byte(zoneContent), 0644); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(tmpdir, "db.example.org"), []byte(zoneContent), 0644); err != nil {
 		t.Fatal(err)
 	}
 
 	time.Sleep(1500 * time.Millisecond) // wait for it to be picked up
 
-	resp, err = p.Lookup(state, "www.example.org.", dns.TypeA)
+	resp, err = dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatal("Expected to receive reply, but didn't")
 	}
@@ -64,10 +56,10 @@ func TestAuto(t *testing.T) {
 	}
 
 	// Remove db.example.org again.
-	os.Remove(path.Join(tmpdir, "db.example.org"))
+	os.Remove(filepath.Join(tmpdir, "db.example.org"))
 
 	time.Sleep(1100 * time.Millisecond) // wait for it to be picked up
-	resp, err = p.Lookup(state, "www.example.org.", dns.TypeA)
+	resp, err = dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatal("Expected to receive reply, but didn't")
 	}
@@ -82,7 +74,6 @@ func TestAutoNonExistentZone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.SetOutput(ioutil.Discard)
 
 	corefile := `.:0 {
 		auto {
@@ -103,10 +94,9 @@ func TestAutoNonExistentZone(t *testing.T) {
 	}
 	defer i.Stop()
 
-	p := proxy.NewLookup([]string{udp})
-	state := request.Request{W: &test.ResponseWriter{}, Req: new(dns.Msg)}
-
-	resp, err := p.Lookup(state, "example.org.", dns.TypeA)
+	m := new(dns.Msg)
+	m.SetQuestion("example.org.", dns.TypeA)
+	resp, err := dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatal("Expected to receive reply, but didn't")
 	}
@@ -117,7 +107,6 @@ func TestAutoNonExistentZone(t *testing.T) {
 
 func TestAutoAXFR(t *testing.T) {
 	t.Parallel()
-	log.SetOutput(ioutil.Discard)
 
 	tmpdir, err := ioutil.TempDir(os.TempDir(), "coredns")
 	if err != nil {
@@ -144,18 +133,15 @@ func TestAutoAXFR(t *testing.T) {
 	defer i.Stop()
 
 	// Write db.example.org to get example.org.
-	if err = ioutil.WriteFile(path.Join(tmpdir, "db.example.org"), []byte(zoneContent), 0644); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(tmpdir, "db.example.org"), []byte(zoneContent), 0644); err != nil {
 		t.Fatal(err)
 	}
 
 	time.Sleep(1100 * time.Millisecond) // wait for it to be picked up
 
-	p := proxy.NewLookup([]string{udp})
 	m := new(dns.Msg)
 	m.SetAxfr("example.org.")
-	state := request.Request{W: &test.ResponseWriter{}, Req: m}
-
-	resp, err := p.Lookup(state, "example.org.", dns.TypeAXFR)
+	resp, err := dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatal("Expected to receive reply, but didn't")
 	}

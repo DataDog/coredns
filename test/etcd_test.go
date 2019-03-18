@@ -5,16 +5,11 @@ package test
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
-	"log"
 	"testing"
 	"time"
 
 	"github.com/coredns/coredns/plugin/etcd"
 	"github.com/coredns/coredns/plugin/etcd/msg"
-	"github.com/coredns/coredns/plugin/proxy"
-	"github.com/coredns/coredns/plugin/test"
-	"github.com/coredns/coredns/request"
 
 	etcdcv3 "github.com/coreos/etcd/clientv3"
 	"github.com/miekg/dns"
@@ -23,6 +18,16 @@ import (
 func etcdPlugin() *etcd.Etcd {
 	etcdCfg := etcdcv3.Config{
 		Endpoints: []string{"http://localhost:2379"},
+	}
+	cli, _ := etcdcv3.New(etcdCfg)
+	return &etcd.Etcd{Client: cli, PathPrefix: "/skydns"}
+}
+
+func etcdPluginWithCredentials(username, password string) *etcd.Etcd {
+	etcdCfg := etcdcv3.Config{
+		Endpoints: []string{"http://localhost:2379"},
+		Username:  username,
+		Password:  password,
 	}
 	cli, _ := etcdcv3.New(etcdCfg)
 	return &etcd.Etcd{Client: cli, PathPrefix: "/skydns"}
@@ -40,7 +45,7 @@ func TestEtcdStubAndProxyLookup(t *testing.T) {
         stubzones
         path /skydns
         endpoint http://localhost:2379
-        upstream 8.8.8.8:53 8.8.4.4:53
+        upstream
 	fallthrough
     }
     proxy . 8.8.8.8:53
@@ -53,7 +58,6 @@ func TestEtcdStubAndProxyLookup(t *testing.T) {
 	defer ex.Stop()
 
 	etc := etcdPlugin()
-	log.SetOutput(ioutil.Discard)
 
 	var ctx = context.TODO()
 	for _, serv := range servicesStub { // adds example.{net,org} as stubs
@@ -61,9 +65,9 @@ func TestEtcdStubAndProxyLookup(t *testing.T) {
 		defer delete(ctx, t, etc, serv.Key)
 	}
 
-	p := proxy.NewLookup([]string{udp}) // use udp port from the server
-	state := request.Request{W: &test.ResponseWriter{}, Req: new(dns.Msg)}
-	resp, err := p.Lookup(state, "example.com.", dns.TypeA)
+	m := new(dns.Msg)
+	m.SetQuestion("example.com.", dns.TypeA)
+	resp, err := dns.Exchange(m, udp)
 	if err != nil {
 		t.Fatalf("Expected to receive reply, but didn't: %v", err)
 	}

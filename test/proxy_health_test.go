@@ -1,46 +1,14 @@
 package test
 
 import (
-	"io/ioutil"
-	"log"
 	"testing"
-
-	"github.com/coredns/coredns/plugin/proxy"
-	"github.com/coredns/coredns/plugin/test"
-	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
 )
 
-func TestProxyErratic(t *testing.T) {
-	log.SetOutput(ioutil.Discard)
-
-	corefile := `example.org:0 {
-		erratic {
-			drop 2
-		}
-	}
-`
-
-	backend, udp, _, err := CoreDNSServerAndPorts(corefile)
-	if err != nil {
-		t.Fatalf("Could not get CoreDNS serving instance: %s", err)
-	}
-	defer backend.Stop()
-
-	p := proxy.NewLookup([]string{udp})
-	state := request.Request{W: &test.ResponseWriter{}, Req: new(dns.Msg)}
-
-	// We do one lookup that should not time out.
-	// After this the backend is marked unhealthy anyway. So basically this
-	// tests that it times out.
-	p.Lookup(state, "example.org.", dns.TypeA)
-}
-
 func TestProxyThreeWay(t *testing.T) {
 	// Run 3 CoreDNS server, 2 upstream ones and a proxy. 1 Upstream is unhealthy after 1 query, but after
-	// that we should still be able to send to the other one
-	log.SetOutput(ioutil.Discard)
+	// that we should still be able to send to the other one.
 
 	// Backend CoreDNS's.
 	corefileUp1 := `example.org:0 {
@@ -102,7 +70,7 @@ func TestProxyThreeWay(t *testing.T) {
 			continue
 		}
 		// We would previously get SERVFAIL, so just getting answers here
-		// is a good sign. The actuall timeouts are handled in the err != nil case
+		// is a good sign. The actual timeouts are handled in the err != nil case
 		// above.
 		if r.Rcode != dns.RcodeSuccess {
 			t.Fatalf("Expected success rcode, got %d", r.Rcode)

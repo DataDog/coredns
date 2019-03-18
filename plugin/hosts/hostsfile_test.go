@@ -12,7 +12,11 @@ import (
 )
 
 func testHostsfile(file string) *Hostsfile {
-	h := &Hostsfile{Origins: []string{"."}}
+	h := &Hostsfile{
+		Origins: []string{"."},
+		hmap:    newHostsMap(),
+		options: newOptions(),
+	}
 	h.parseReader(strings.NewReader(file))
 	return h
 }
@@ -26,7 +30,7 @@ type staticHostEntry struct {
 var (
 	hosts = `255.255.255.255	broadcasthost
 	127.0.0.2	odin
-	127.0.0.3	odin  # inline comment 
+	127.0.0.3	odin  # inline comment
 	::2             odin
 	127.1.1.1	thor
 	# aliases
