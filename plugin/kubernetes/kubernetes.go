@@ -250,7 +250,7 @@ func (k *Kubernetes) Records(state request.Request, exact bool) ([]msg.Service, 
 		return nil, errNoItems
 	}
 
-	if !wildcard(r.namespace) && !k.namespaceValid(r.namespace) {
+	if !wildcard(r.namespace) && !k.namespaceExposed(r.namespace) {
 		return nil, errNsNotExposed
 	}
 
@@ -312,7 +312,7 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 	}
 
 	namespace := r.namespace
-	if !wildcard(namespace) && !k.namespaceValid(namespace) {
+	if !wildcard(namespace) && !k.namespaceExposed(namespace) {
 		return nil, errNoItems
 	}
 
@@ -320,7 +320,7 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 
 	// handle empty pod name
 	if podname == "" {
-		if k.namespaceValid(namespace) || wildcard(namespace) {
+		if k.namespaceExposed(namespace) || wildcard(namespace) {
 			// NODATA
 			return nil, nil
 		}
@@ -337,7 +337,7 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 	}
 
 	if k.podMode == podModeInsecure {
-		if !wildcard(namespace) && !k.namespaceValid(namespace) { // no wildcard, but namespace does not exist
+		if !wildcard(namespace) && !k.namespaceExposed(namespace) { // no wildcard, but namespace does not exist
 			return nil, errNoItems
 		}
 
@@ -353,14 +353,14 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 	err = errNoItems
 	if wildcard(podname) && !wildcard(namespace) {
 		// If namespace exists, err should be nil, so that we return NODATA instead of NXDOMAIN
-		if k.namespaceValid(namespace) {
+		if k.namespaceExposed(namespace) {
 			err = nil
 		}
 	}
 
 	for _, p := range k.APIConn.PodIndex(ip) {
 		// If namespace has a wildcard, filter results against Corefile namespace list.
-		if wildcard(namespace) && !k.namespaceValid(p.Namespace) {
+		if wildcard(namespace) && !k.namespaceExposed(p.Namespace) {
 			continue
 		}
 
@@ -382,13 +382,13 @@ func (k *Kubernetes) findPods(r recordRequest, zone string) (pods []msg.Service,
 
 // findServices returns the services matching r from the cache.
 func (k *Kubernetes) findServices(r recordRequest, zone string) (services []msg.Service, err error) {
-	if !wildcard(r.namespace) && !k.namespaceValid(r.namespace) {
+	if !wildcard(r.namespace) && !k.namespaceExposed(r.namespace) {
 		return nil, errNoItems
 	}
 
 	// handle empty service name
 	if r.service == "" {
-		if k.namespaceValid(r.namespace) || wildcard(r.namespace) {
+		if k.namespaceExposed(r.namespace) || wildcard(r.namespace) {
 			// NODATA
 			return nil, nil
 		}
@@ -399,7 +399,7 @@ func (k *Kubernetes) findServices(r recordRequest, zone string) (services []msg.
 	err = errNoItems
 	if wildcard(r.service) && !wildcard(r.namespace) {
 		// If namespace exists, err should be nil, so that we return NODATA instead of NXDOMAIN
-		if k.namespaceValid(r.namespace) {
+		if k.namespaceExposed(r.namespace) {
 			err = nil
 		}
 	}
@@ -427,7 +427,7 @@ func (k *Kubernetes) findServices(r recordRequest, zone string) (services []msg.
 
 		// If request namespace is a wildcard, filter results against Corefile namespace list.
 		// (Namespaces without a wildcard were filtered before the call to this function.)
-		if wildcard(r.namespace) && !k.namespaceValid(svc.Namespace) {
+		if wildcard(r.namespace) && !k.namespaceExposed(svc.Namespace) {
 			continue
 		}
 

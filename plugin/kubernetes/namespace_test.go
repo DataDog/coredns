@@ -41,7 +41,7 @@ func TestNamespaceExposed(t *testing.T) {
 	k.APIConn = &APIConnServeTest{}
 	for i, test := range tests {
 		k.Namespaces = test.kubernetesNamespaces
-		actual := k.namespaceExposed(test.testNamespace)
+		actual := k.configuredNamespace(test.testNamespace)
 		if actual != test.expected {
 			t.Errorf("Test %d failed. Namespace %s was expected to be exposed", i, test.testNamespace)
 		}
@@ -64,7 +64,7 @@ func TestNamespaceValid(t *testing.T) {
 	k.APIConn = &APIConnServeTest{}
 	for i, test := range tests {
 		k.Namespaces = test.kubernetesNamespaces
-		actual := k.namespaceValid(test.testNamespace)
+		actual := k.namespaceExposed(test.testNamespace)
 		if actual != test.expected {
 			t.Errorf("Test %d failed. Namespace %s was expected to be valid", i, test.testNamespace)
 		}

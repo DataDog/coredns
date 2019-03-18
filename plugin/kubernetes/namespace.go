@@ -12,9 +12,9 @@ func (k *Kubernetes) filteredNamespaceExists(namespace string) bool {
 	return ns.ObjectMeta.Name == namespace
 }
 
-// namespaceExposed returns true when the namespace is exposed through the plugin
+// configuredNamespace returns true when the namespace is exposed through the plugin
 // `namespaces` configuration.
-func (k *Kubernetes) namespaceExposed(namespace string) bool {
+func (k *Kubernetes) configuredNamespace(namespace string) bool {
 	_, ok := k.Namespaces[namespace]
 	if len(k.Namespaces) > 0 && !ok {
 		return false
@@ -22,6 +22,6 @@ func (k *Kubernetes) namespaceExposed(namespace string) bool {
 	return true
 }
 
-func (k *Kubernetes) namespaceValid(namespace string) bool {
-	return k.namespaceExposed(namespace) && k.filteredNamespaceExists(namespace)
+func (k *Kubernetes) namespaceExposed(namespace string) bool {
+	return k.configuredNamespace(namespace) && k.filteredNamespaceExists(namespace)
 }
