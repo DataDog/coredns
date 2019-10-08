@@ -22,9 +22,12 @@ import (
 )
 
 const (
-	tagName  = "coredns.io/name"
-	tagType  = "coredns.io/type"
-	tagRcode = "coredns.io/rcode"
+	tagClient = "coredns.client"
+	tagName   = "coredns.name"
+	tagProto  = "coredns.proto"
+	tagRcode  = "coredns.rcode"
+	tagServer = "coredns.server"
+	tagType   = "coredns.type"
 )
 
 type trace struct {
@@ -93,20 +96,19 @@ func (t *trace) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 	}
 
 	req := request.Request{W: w, Req: r}
-	span = t.Tracer().StartSpan(spanName(ctx, req))
+	span = t.Tracer().StartSpan("servedns")
 	defer span.Finish()
 
 	rw := dnstest.NewRecorder(w)
 	ctx = ot.ContextWithSpan(ctx, span)
 	status, err := plugin.NextOrFailure(t.Name(), t.Next, ctx, rw, r)
 
+	span.SetTag(tagClient, req.IP())
 	span.SetTag(tagName, req.Name())
-	span.SetTag(tagType, req.Type())
+	span.SetTag(tagProto, req.Proto())
 	span.SetTag(tagRcode, rcode.ToString(rw.Rcode))
+	span.SetTag(tagServer, metrics.WithServer(ctx))
+	span.SetTag(tagType, req.Type())
 
 	return status, err
-}
-
-func spanName(ctx context.Context, req request.Request) string {
-	return "servedns:" + metrics.WithServer(ctx) + " " + req.Name()
 }
