@@ -111,6 +111,8 @@ func (t *trace) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 	span.SetTag(tagRcode, rcode.ToString(rw.Rcode))
 	span.SetTag(tagServer, metrics.WithServer(ctx))
 	span.SetTag(tagType, req.Type())
+	span.SetTag("_dd1.sr.eausr",1)
+	span.SetTag("_dd1.sr.rapre",float64(1/t.every))
 
 	return status, err
 }
