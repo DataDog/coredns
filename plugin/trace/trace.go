@@ -40,7 +40,7 @@ type trace struct {
 	every           uint64
 	count           uint64
 	Once            sync.Once
-	loglevel        bool
+	debugLogLevel   bool
 }
 
 func (t *trace) Tracer() ot.Tracer {
@@ -55,7 +55,7 @@ func (t *trace) OnStartup() error {
 		case "zipkin":
 			err = t.setupZipkin()
 		case "datadog":
-			tracer := opentracer.New(tracer.WithAgentAddr(t.Endpoint), tracer.WithServiceName(t.serviceName), tracer.WithDebugMode(t.loglevel))
+			tracer := opentracer.New(tracer.WithAgentAddr(t.Endpoint), tracer.WithServiceName(t.serviceName), tracer.WithDebugMode(t.debugLogLevel))
 			t.tracer = tracer
 		default:
 			err = fmt.Errorf("unknown endpoint type: %s", t.EndpointType)

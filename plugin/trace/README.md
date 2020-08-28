@@ -38,6 +38,7 @@ trace [ENDPOINT-TYPE] [ENDPOINT] {
 * `service` **NAME** allows you to specify the service name reported to the tracing server.
   Default is `coredns`.
 * `client_server` will enable the `ClientServerSameSpan` OpenTracing feature.
+* `debug_log_level` will set the Datadog tracer to debug log level.
 
 ## Zipkin
 You can run Zipkin on a Docker host like this:
@@ -82,5 +83,6 @@ trace tracinghost:9411 {
 	every 10000
 	service dnsproxy
 	client_server
+	debug_log_level
 }
 ~~~

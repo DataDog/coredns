@@ -84,6 +84,18 @@ func traceParse(c *caddy.Controller) (*trace, error) {
 				if err != nil {
 					return nil, err
 				}
+			case "debug_log_level":
+				args := c.RemainingArgs()
+				if len(args) > 1 {
+					return nil, c.ArgErr()
+				}
+				tr.debugLogLevel = true
+				if len(args) == 1 {
+					tr.debugLogLevel, err = strconv.ParseBool(args[0])
+				}
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
