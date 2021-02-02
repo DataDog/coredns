@@ -84,6 +84,7 @@ func (f File) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (i
 	m := new(dns.Msg)
 	m.SetReply(r)
 	m.Authoritative = true
+	m.RecursionAvailable = true
 	m.Answer, m.Ns, m.Extra = answer, ns, extra
 
 	switch result {
