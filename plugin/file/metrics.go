@@ -14,5 +14,5 @@ var (
 		Subsystem: "file",
 		Name:      "entries",
 		Help:      "The combined number of entries in zone file and Corefile.",
-	}, []string{})
+	}, []string{"dns_name"})
 )

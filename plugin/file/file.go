@@ -146,7 +146,7 @@ func Parse(f io.Reader, origin, fileName string, serial int64) (*Zone, error) {
 		}
 	}
 	for name, entries := range entriesByName {
-		zoneFileEntriesByDomain.WithLabelValues("dns_name:" + name).Set(float64(entries))
+		zoneFileEntriesByDomain.WithLabelValues(name).Set(float64(entries))
 	}
 	if !seenSOA {
 		return nil, fmt.Errorf("file %q has no SOA record for origin %s", fileName, origin)
