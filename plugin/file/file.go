@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/coredns/coredns/plugin"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
@@ -141,7 +142,10 @@ func Parse(f io.Reader, origin, fileName string, serial int64) (*Zone, error) {
 			}
 		}
 
-		entriesByName[rr.Header().Name]++
+		if strings.Count(rr.Header().Name, ".") == 3 { // We want to report only domains like 'mcnulty-web.service.consul.'
+			// and don't wont domains like  'tag.mcnulty-web.service.consul.'
+			entriesByName[rr.Header().Name]++
+		}
 		if err := z.Insert(rr); err != nil {
 			return nil, err
 		}
