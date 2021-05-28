@@ -10,7 +10,6 @@ import (
 	tst "github.com/coredns/coredns/plugin/test"
 	"github.com/coredns/coredns/plugin/whoami"
 	"github.com/miekg/dns"
-	"gotest.tools/assert"
 )
 
 func TestRewriteParse(t *testing.T) {
@@ -58,7 +57,9 @@ func TestRewriteRule(t *testing.T) {
 	for i, test := range tests {
 		c := caddy.NewTestController("dns", fmt.Sprintf(`fractional_rewrite suffix %s fabric.dog fabric.dog-canary`, test.fraction))
 		r, err := fractionalRewriteParse(c)
-		assert.NilError(t, err)
+		if err != nil{
+			t.Fatalf("rewrite parse failed")
+		}
 		fr := fractionalRewrite{
 			Next: whoami.Whoami{},
 			Rule: r,
