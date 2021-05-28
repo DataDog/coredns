@@ -50,10 +50,10 @@ func TestRewriteRule(t *testing.T) {
 		toQ      string
 		fraction string
 	}{
-		{"a.fabric.dog", "a.fabric.dog", "0.0"},
-		{"a.com", "a.com", "0.0"},
-		{"abc.fabric.dog", "abc.fabric.dog-canary", "1.0"},
-		{"a.com", "a.com", "1.0"},
+		{"a.fabric.dog", "a.fabric.dog", "0.1"},
+		{"a.com", "a.com", "0.1"},
+		{"abc.fabric.dog", "abc.fabric.dog-canary", "0.5"},
+		{"a.com", "a.com", "0.1"},
 	}
 	for i, test := range tests {
 		c := caddy.NewTestController("dns", fmt.Sprintf(`fractional_rewrite suffix %s fabric.dog fabric.dog-canary`, test.fraction))
@@ -66,7 +66,9 @@ func TestRewriteRule(t *testing.T) {
 		ctx := context.TODO()
 		m := new(dns.Msg)
 		m.SetQuestion(test.fromQ, dns.TypeA)
-
+		// per https://pkg.go.dev/github.com/coredns/coredns/plugin/test#ResponseWriter
+		// remote address is always 10.240.0.1 and port 40212
+		// fnv("10.240.0.1:40212") % 100 = 48
 		rec := dnstest.NewRecorder(&tst.ResponseWriter{})
 		fr.ServeDNS(ctx, rec, m)
 
