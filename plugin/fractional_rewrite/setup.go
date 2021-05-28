@@ -46,7 +46,7 @@ func fractionalRewriteParse(c *caddy.Controller) (Rule, error) {
 			fraction,
 		}, nil
 	default:
-		return nil, plugin.Error("fractional_rewrite", c.ArgErr())
+		return nil, plugin.Error("fractional_rewrite", c.Errf("unknown rule name %s", ruleName))
 	}
 }
 
