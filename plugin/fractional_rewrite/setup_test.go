@@ -19,14 +19,14 @@ func TestRewriteParse(t *testing.T) {
 		description string
 	}{
 		{
-			`fractional_rewrite suffix 0.1 fabric.dog fabric.dog-canary`,
+			`fractional_rewrite suffix consistent_hashing 0.1 fabric.dog fabric.dog-canary`,
 			true,
 			"legal case",
 		},
 		{
-			`fractional_rewrite prefix 0.1 a.com aa.com`,
+			`fractional_rewrite prefix consistent_hashing 0.1 a.com aa.com`,
 			false,
-			"specified rule is not implemented",
+			"specified rewrite rule is not implemented",
 		},
 		{
 			`fractional_rewrite 0.2 a.com a.com.cn`,
@@ -45,17 +45,21 @@ func TestRewriteParse(t *testing.T) {
 
 func TestRewriteRule(t *testing.T) {
 	tests := []struct {
-		fromQ    string
-		toQ      string
-		fraction string
+		fromQ     string
+		toQ       string
+		fraction  string
+		algorithm string
 	}{
-		{"a.fabric.dog", "a.fabric.dog", "0.1"},
-		{"a.com", "a.com", "0.1"},
-		{"abc.fabric.dog", "abc.fabric.dog-canary", "0.5"},
-		{"a.com", "a.com", "0.1"},
+		{"a.fabric.dog", "a.fabric.dog", "0.1", "consistent_hashing"},
+		{"a.com", "a.com", "0.1", "consistent_hashing"},
+		{"abc.fabric.dog", "abc.fabric.dog-canary", "0.5", "consistent_hashing"},
+		{"a.com", "a.com", "0.1", "consistent_hashing"},
+		{"a.com", "a.com", "1.0", "random"},
+		{"a.fabric.dog", "a.fabric.dog-canary", "1.0", "random"},
+		{"a.fabric.dog", "a.fabric.dog", "0.0", "random"},
 	}
 	for i, test := range tests {
-		c := caddy.NewTestController("dns", fmt.Sprintf(`fractional_rewrite suffix %s fabric.dog fabric.dog-canary`, test.fraction))
+		c := caddy.NewTestController("dns", fmt.Sprintf(`fractional_rewrite suffix %s %s fabric.dog fabric.dog-canary`, test.algorithm, test.fraction))
 		r, err := fractionalRewriteParse(c)
 		if err != nil{
 			t.Fatalf("rewrite parse failed")

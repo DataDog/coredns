@@ -3,6 +3,7 @@ package fractional_rewrite
 import (
 	"context"
 	"hash/fnv"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -30,20 +31,21 @@ func setup(c *caddy.Controller) error {
 func fractionalRewriteParse(c *caddy.Controller) (Rule, error) {
 	c.Next()
 	args := c.RemainingArgs()
-	if len(args) != 4 {
+	if len(args) != 5 {
 		return nil, plugin.Error("fractional_rewrite", c.ArgErr())
 	}
-	ruleName := args[0]
-	fraction, err := strconv.ParseFloat(args[1], 64)
+	ruleName, algorithm, suffix, replacement := args[0], args[1], args[3], args[4]
+	fraction, err := strconv.ParseFloat(args[2], 64)
 	if err != nil {
 		return nil, plugin.Error("fractional_rewrite", c.Errf("expected floating point value but got %s", args[1]))
 	}
 	switch ruleName {
 	case "suffix":
 		return &suffixRule{
-			args[2],
-			args[3],
+			suffix,
+			replacement,
 			fraction,
+			algorithm,
 		}, nil
 	default:
 		return nil, plugin.Error("fractional_rewrite", c.Errf("unknown rule name %s", ruleName))
@@ -59,6 +61,7 @@ type suffixRule struct {
 	Suffix      string
 	Replacement string
 	Fraction    float64
+	Algorithm 	string
 }
 
 // Rewrite rewrites the current request when the name ends with the matching string.
@@ -70,10 +73,18 @@ func (rule *suffixRule) Rewrite(ctx context.Context, state request.Request) {
 }
 
 func (rule *suffixRule) shouldRewrite(key string) bool {
-	h := fnv.New32a()
-	h.Write([]byte(key))
-	if h.Sum32() % 100 <= uint32(rule.Fraction * 100){
-		return true
+	switch rule.Algorithm{
+	case "consistent_hashing":
+		h := fnv.New32a()
+		h.Write([]byte(key))
+		if h.Sum32() % 100 <= uint32(rule.Fraction * 100){
+			return true
+		}
+		return false
+	case "random":
+		r := rand.Float64()
+		return r < rule.Fraction
+	default:
+		return false
 	}
-	return false
 }
