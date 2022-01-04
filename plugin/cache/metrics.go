@@ -14,7 +14,7 @@ var (
 		Subsystem: "cache",
 		Name:      "entries",
 		Help:      "The number of elements in the cache.",
-	}, []string{"server", "type"})
+	}, []string{"server", "type", "zones"})
 	// cacheHits is counter of cache hits by cache type.
 	cacheHits = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: plugin.Namespace,

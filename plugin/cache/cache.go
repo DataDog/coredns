@@ -4,6 +4,7 @@ package cache
 import (
 	"hash/fnv"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/coredns/coredns/plugin"
@@ -162,8 +163,9 @@ func (w *ResponseWriter) WriteMsg(res *dns.Msg) error {
 	if hasKey && duration > 0 {
 		if w.state.Match(res) {
 			w.set(res, key, mt, duration)
-			cacheSize.WithLabelValues(w.server, Success).Set(float64(w.pcache.Len()))
-			cacheSize.WithLabelValues(w.server, Denial).Set(float64(w.ncache.Len()))
+			// TODO better way to do this without joins?
+			cacheSize.WithLabelValues(w.server, Success, strings.Join(w.Zones, ",")).Set(float64(w.pcache.Len()))
+			cacheSize.WithLabelValues(w.server, Denial, strings.Join(w.Zones, ",")).Set(float64(w.ncache.Len()))
 		} else {
 			// Don't log it, but increment counter
 			cacheDrops.WithLabelValues(w.server).Inc()
