@@ -201,7 +201,7 @@ func TestMetricsPluginEnabled(t *testing.T) {
 	}
 	defer srv.Stop()
 
-	metricName := "coredns_plugin_enabled" //{server, zone, name}
+	metricName := "" //{server, zone, name}
 
 	data := test.Scrape("http://" + metrics.ListenAddr + "/metrics")
 

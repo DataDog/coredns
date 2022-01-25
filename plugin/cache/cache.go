@@ -4,7 +4,6 @@ package cache
 import (
 	"hash/fnv"
 	"net"
-	"strings"
 	"time"
 
 	"github.com/coredns/coredns/plugin"
@@ -21,6 +20,8 @@ import (
 type Cache struct {
 	Next  plugin.Handler
 	Zones []string
+
+	zonesMetricLabel string
 
 	ncache  *cache.Cache
 	ncap    int
@@ -163,12 +164,11 @@ func (w *ResponseWriter) WriteMsg(res *dns.Msg) error {
 	if hasKey && duration > 0 {
 		if w.state.Match(res) {
 			w.set(res, key, mt, duration)
-			// TODO better way to do this without joins?
-			cacheSize.WithLabelValues(w.server, Success, strings.Join(w.Zones, ",")).Set(float64(w.pcache.Len()))
-			cacheSize.WithLabelValues(w.server, Denial, strings.Join(w.Zones, ",")).Set(float64(w.ncache.Len()))
+			cacheSize.WithLabelValues(w.server, Success, w.zonesMetricLabel).Set(float64(w.pcache.Len()))
+			cacheSize.WithLabelValues(w.server, Denial, w.zonesMetricLabel).Set(float64(w.ncache.Len()))
 		} else {
 			// Don't log it, but increment counter
-			cacheDrops.WithLabelValues(w.server).Inc()
+			cacheDrops.WithLabelValues(w.server, w.zonesMetricLabel).Inc()
 		}
 	}
 
@@ -197,7 +197,7 @@ func (w *ResponseWriter) set(m *dns.Msg, key uint64, mt response.Type, duration 
 	case response.NoError, response.Delegation:
 		i := newItem(m, w.now(), duration)
 		if w.pcache.Add(key, i) {
-			evictions.WithLabelValues(w.server, Success).Inc()
+			evictions.WithLabelValues(w.server, Success, w.zonesMetricLabel).Inc()
 		}
 		// when pre-fetching, remove the negative cache entry if it exists
 		if w.prefetch {
@@ -207,7 +207,7 @@ func (w *ResponseWriter) set(m *dns.Msg, key uint64, mt response.Type, duration 
 	case response.NameError, response.NoData, response.ServerError:
 		i := newItem(m, w.now(), duration)
 		if w.ncache.Add(key, i) {
-			evictions.WithLabelValues(w.server, Denial).Inc()
+			evictions.WithLabelValues(w.server, Denial, w.zonesMetricLabel).Inc()
 		}
 
 	case response.OtherError:
