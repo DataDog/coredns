@@ -58,9 +58,9 @@ cache [TTL] [ZONES...] {
   available.  When this happens, cache will attempt to refresh the cache entry after sending the expired cache
   entry to the client. The responses have a TTL of 0. **DURATION** is how far back to consider
   stale responses as fresh. The default duration is 1h. **REFRESH_MODE** controls whether the attempt to refresh
-  the cache happens `before` or `after` returning a response. This defaults to `after`. Setting this value to
-  `before` could lead to increased latency when serving stale responses for unavailable upstreams, but will
-  reduce served stales specially on infrequent resolution usecases.
+  the cache happens before (`immediate`) or after (`verified`) returning a response. This defaults to `immediate`.
+  Setting this value to `verified` could lead to increased latency when serving stale responses for unavailable
+  upstreams, but will reduce served stales specially on infrequent resolution usecases.
 
 ## Capacity and Eviction
 

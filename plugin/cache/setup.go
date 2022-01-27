@@ -180,13 +180,13 @@ func cacheParse(c *caddy.Controller) (*Cache, error) {
 					}
 					ca.staleUpTo = d
 				}
-				ca.staleFetchBefore = false
+				ca.verifyStale = false
 				if len(args) > 1 {
 					mode := strings.ToLower(args[1])
 					if mode != "before" && mode != "after" {
 						return nil, fmt.Errorf("invalid value for serve_stale refresh mode: %s", mode)
 					}
-					ca.staleFetchBefore = mode == "before"
+					ca.verifyStale = mode == "before"
 				}
 			default:
 				return nil, c.ArgErr()

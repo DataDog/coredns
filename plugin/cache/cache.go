@@ -38,7 +38,7 @@ type Cache struct {
 
 	// Stale serve
 	staleUpTo        time.Duration
-	staleFetchBefore bool
+	verifyStale bool
 
 	// Testing.
 	now func() time.Time

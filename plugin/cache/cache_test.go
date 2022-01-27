@@ -300,7 +300,7 @@ func TestServeFromStaleCache(t *testing.T) {
 	}
 }
 
-func TestServeFromStaleCacheFetchBeforeWhenUpstreamAvailable(t *testing.T) {
+func TestServeFromStaleCacheFetchBefore(t *testing.T) {
 	c := New()
 	c.Next = ttlBackend(120)
 
@@ -311,56 +311,71 @@ func TestServeFromStaleCacheFetchBeforeWhenUpstreamAvailable(t *testing.T) {
 	// Cache cached.org. with 120s TTL
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
 	c.staleUpTo = 1 * time.Hour
-	c.staleFetchBefore = true
+	c.verifyStale = true
 	c.ServeDNS(ctx, rec, req)
 	if c.pcache.Len() != 1 {
 		t.Fatalf("Msg with > 0 TTL should have been cached")
 	}
 
-	// Different ttl backend to be able to tell responses apart. A TTL=200 response means we fetched upstream.
-	c.Next = ttlBackend(200)
-
 	tests := []struct {
 		name          string
+		upstreamRCode int
+		upstreamTtl   int
 		futureMinutes int
+		expectedRCode int
 		expectedTtl   int
-		errorResponse bool
 	}{
-		// After the 2 minutes of initial TTL, we should see upstream responses because upstream is available
-		{"cached.org.", 1, 60, false},
-		{"cached.org.", 30, 200, false},
-		{"cached.org.", 60, 200, false},
-		{"cached.org.", 70, 200, false},
+		// After 1 minutes of initial TTL, we should see cached responses
+		{"cached.org.", dns.RcodeSuccess, 200, 1, dns.RcodeSuccess, 60}, // ttl = 120 - 60 -- upstream TTL is not seen
 
-		// Non cached names always go through to the upstream
-		{"notcached.org.", 1, 200, false},
-		{"notcached.org.", 30, 200, false},
-		{"notcached.org.", 60, 200, false},
-		{"notcached.org.", 70, 200, false},
+		// After the 2 more minutes, we should see upstream responses because upstream is available
+		{"cached.org.", dns.RcodeSuccess, 200, 3, dns.RcodeSuccess, 200},
+
+		// After the TTL expired, if the server succeeds we should get the cached entry
+		{"cached.org.", dns.RcodeServerFailure, 200, 7, dns.RcodeSuccess, 0},
+
+		// After 1 more minutes, if the server serves nxdomain we should see them (despite being in serve stale period)
+		{"cached.org.", dns.RcodeNameError, 150, 8, dns.RcodeNameError, 150},
 	}
 
 	for i, tt := range tests {
 		rec := dnstest.NewRecorder(&test.ResponseWriter{})
 		c.now = func() time.Time { return time.Now().Add(time.Duration(tt.futureMinutes) * time.Minute) }
+
+		if tt.upstreamRCode == dns.RcodeSuccess {
+			c.Next = ttlBackend(tt.upstreamTtl)
+		} else if tt.upstreamRCode == dns.RcodeServerFailure {
+			// Make upstream fail, should now rely on cache during the c.staleUpTo period
+			c.Next = plugin.HandlerFunc(func(context.Context, dns.ResponseWriter, *dns.Msg) (int, error) {
+				return dns.RcodeServerFailure, fmt.Errorf("some error from upstream")
+			})
+		} else if tt.upstreamRCode == dns.RcodeNameError {
+			c.Next = nxDomainBackend(tt.upstreamTtl)
+		} else {
+			t.Fatal("upstream code not implemented")
+		}
+
 		r := req.Copy()
 		r.SetQuestion(tt.name, dns.TypeA)
 		ret, _ := c.ServeDNS(ctx, rec, r)
-		if tt.errorResponse {
-			if ret == dns.RcodeSuccess {
-				t.Errorf("Test %d: expecting error response; got %v", i, ret)
+		if ret != tt.expectedRCode {
+			t.Errorf("Test %d: expected rcode=%v, got rcode=%v", i, tt.expectedRCode, ret)
+			continue
+		}
+		if ret == dns.RcodeSuccess {
+			recTtl := rec.Msg.Answer[0].Header().Ttl
+			if tt.expectedTtl != int(recTtl) {
+				t.Errorf("Test %d: expected TTL=%d, got TTL=%d", i, tt.expectedTtl, recTtl)
 			}
-			continue
-		}
-		if ret != dns.RcodeSuccess {
-			t.Errorf("Test %d: unexpected error; got %v", i, ret)
-			continue
-		}
-		recTtl := rec.Msg.Answer[0].Header().Ttl
-		if tt.expectedTtl != int(recTtl) {
-			t.Errorf("Test %d: expected TTL=%d, got TTL=%d", i, tt.expectedTtl, recTtl)
+		} else if ret == dns.RcodeNameError {
+			soaTtl := rec.Msg.Ns[0].Header().Ttl
+			if tt.expectedTtl != int(soaTtl) {
+				t.Errorf("Test %d: expected TTL=%d, got TTL=%d", i, tt.expectedTtl, soaTtl)
+			}
 		}
 	}
 }
+
 func TestServeFromStaleCacheFetchBeforeWhenUpstreamUnavailable(t *testing.T) {
 	c := New()
 	c.Next = ttlBackend(120)
@@ -372,7 +387,7 @@ func TestServeFromStaleCacheFetchBeforeWhenUpstreamUnavailable(t *testing.T) {
 	// Cache cached.org.
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
 	c.staleUpTo = 1 * time.Hour
-	c.staleFetchBefore = true
+	c.verifyStale = true
 	c.ServeDNS(ctx, rec, req)
 	if c.pcache.Len() != 1 {
 		t.Fatalf("Msg with > 0 TTL should have been cached")
