@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/Azure/azure-sdk-for-go v61.3.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.24
-	github.com/Azure/go-autorest/autorest/azure/auth v0.5.11
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.12
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/aws/aws-sdk-go v1.42.39
 	github.com/coredns/caddy v1.1.1
