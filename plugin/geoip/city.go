@@ -7,7 +7,7 @@ import (
 
 	"github.com/coredns/coredns/plugin/metadata"
 
-	"github.com/oschwald/geoip2-golang"
+	"github.com/oschwald/geoip2-golang/v2"
 )
 
 const defaultLang = "en"
