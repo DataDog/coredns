@@ -24,7 +24,6 @@ require (
 	github.com/grpc-ecosystem/grpc-opentracing v0.0.0-20180507213350-8e809c8a8645
 	github.com/hashicorp/nomad/api v0.0.0-20250909143645-a3b86c697f38 // v1.10.5
 	github.com/infobloxopen/go-trees v0.0.0-20200715205103-96a057b8dfb9
-	github.com/matttproud/golang_protobuf_extensions v1.0.4
 	github.com/miekg/dns v1.1.68
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/openzipkin-contrib/zipkin-go-opentracing v0.5.0
@@ -49,7 +48,10 @@ require (
 	sigs.k8s.io/mcs-api v0.3.0
 )
 
-require github.com/stretchr/testify v1.11.1
+require (
+	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0
+	github.com/stretchr/testify v1.11.1
+)
 
 require (
 	cloud.google.com/go/auth v0.17.0 // indirect
